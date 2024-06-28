@@ -24,13 +24,15 @@
  ****************************************************************************/
 package com.cocos.lib;
 
+import org.json.JSONException;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class JsbBridgeWrapper {
     //Interface for listener, should be implemented and dispatched
     public interface OnScriptEventListener {
-        void onScriptEvent(String arg);
+        void onScriptEvent(String arg) throws JSONException;
     }
     /**
      * Get the instance of JsbBridgetWrapper
@@ -89,7 +91,7 @@ public class JsbBridgeWrapper {
     private JsbBridgeWrapper() {
         JsbBridge.setCallback(new JsbBridge.ICallback() {
             @Override
-            public void onScript(String arg0, String arg1) {
+            public void onScript(String arg0, String arg1) throws JSONException {
                 triggerEvents(arg0, arg1);
             }
         });
@@ -98,7 +100,7 @@ public class JsbBridgeWrapper {
     private final HashMap<String, ArrayList<OnScriptEventListener>> eventMap = new HashMap<>();
     private static JsbBridgeWrapper instance;
 
-    private void triggerEvents(String eventName, String arg) {
+    private void triggerEvents(String eventName, String arg) throws JSONException {
         ArrayList<OnScriptEventListener> arr = eventMap.get(eventName);
         if (arr == null)
             return;
