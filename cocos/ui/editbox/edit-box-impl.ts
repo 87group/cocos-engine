@@ -173,7 +173,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (_currentEditBoxImpl && _currentEditBoxImpl !== this) {
             _currentEditBoxImpl.setFocus(false);
         }
-
+        game.emit('exitbox_begin_edit_scroll', this._delegate);
         this._editing = true;
         _currentEditBoxImpl = this;
         this._delegate!._editBoxEditingDidBegan();
@@ -651,6 +651,7 @@ export class EditBoxImpl extends EditBoxImplBase {
             this._editing = false;
             _currentEditBoxImpl = null;
             this._hideDom();
+            game.emit('exitbox_end_edit_scroll', this._delegate);
             this._delegate!._editBoxEditingDidEnded();
         };
 
