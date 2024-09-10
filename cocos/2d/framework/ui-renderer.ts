@@ -188,6 +188,9 @@ export class UIRenderer extends Renderer {
         return this._color;
     }
     set color (value) {
+        if (!this._color) {
+            this._color = Color.WHITE.clone();
+        }
         if (this._color.equals(value)) {
             return;
         }
