@@ -164,8 +164,13 @@ export class EditBoxImpl extends EditBoxImplBase {
     public setSize (width: number, height: number): void {
         const elem = this._edTxt;
         if (elem) {
-            elem.style.width = `${width}px`;
-            elem.style.height = `${height}px`;
+            if (sys.isMobile) {
+                elem.style.width = `100%`;
+                elem.style.height = `40px`;
+            } else {
+                elem.style.width = `${width}px`;
+                elem.style.height = `${height}px`;
+            }
         }
     }
 
@@ -350,10 +355,12 @@ export class EditBoxImpl extends EditBoxImplBase {
         const ty = _matrix_temp.m13;
 
         const matrix = `matrix(${a},${-b},${-c},${d},${tx},${-ty})`;
-        this._edTxt.style.transform = matrix;
-        this._edTxt.style['-webkit-transform'] = matrix;
-        this._edTxt.style['transform-origin'] = '0px 100% 0px';
-        this._edTxt.style['-webkit-transform-origin'] = '0px 100% 0px';
+        if (!sys.isMobile) {
+            this._edTxt.style.transform = matrix;
+            this._edTxt.style['-webkit-transform'] = matrix;
+            this._edTxt.style['transform-origin'] = '0px 100% 0px';
+            this._edTxt.style['-webkit-transform-origin'] = '0px 100% 0px';
+        }
     }
 
     private _updateInputType (): void {
@@ -442,16 +449,28 @@ export class EditBoxImpl extends EditBoxImplBase {
         let elem = this._edTxt;
         elem.style.color = '#000000';
         elem.style.border = '0px';
-        elem.style.background = 'transparent';
+        if (sys.isMobile) {
+            elem.style.background = '#FFFFFF';
+        } else {
+            elem.style.background = 'transparent';
+        }
         elem.style.width = '100%';
         elem.style.height = '100%';
         elem.style.outline = 'medium';
         elem.style.padding = '0';
         elem.style.textTransform = 'none';
         elem.style.display = 'none';
-        elem.style.position = 'absolute';
+        if (sys.isMobile) {
+            elem.style.position = 'fixed';
+        } else {
+            elem.style.position = 'absolute';
+        }
         elem.style.bottom = '0px';
-        elem.style.left = `${LEFT_PADDING}px`;
+        if (sys.isMobile) {
+            elem.style.left = `0px`;
+        } else {
+            elem.style.left = `${LEFT_PADDING}px`;
+        }
         elem.className = 'cocosEditBox';
         elem.style.fontFamily = 'Arial';
         elem.id = this._domId;
@@ -512,8 +531,13 @@ export class EditBoxImpl extends EditBoxImplBase {
         }
 
         const elem = this._edTxt;
-        elem.style.fontSize = `${fontSize}px`;
-        elem.style.color = textLabel.color.toCSS();
+        if (sys.isMobile) {
+            elem.style.fontSize = `16px`;
+            elem.style.color = '#000000';
+        } else {
+            elem.style.fontSize = `${fontSize}px`;
+            elem.style.color = textLabel.color.toCSS();
+        }
         elem.style.fontFamily = font;
 
         switch (textLabel.horizontalAlign) {
