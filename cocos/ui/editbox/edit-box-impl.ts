@@ -103,6 +103,9 @@ export class EditBoxImpl extends EditBoxImplBase {
     private _placeholderStyleSheet: HTMLStyleElement | null = null;
     private _domId = `EditBoxId_${++_domCount}`;
     private _forceUpdate: boolean = false;
+
+    private _textLabelBackgroundColor: HTMLDivElement | null = null;
+    private _textLabelRightIcon: HTMLDivElement | null = null;
     public init (delegate: EditBox): void {
         if (!delegate) {
             return;
@@ -113,6 +116,11 @@ export class EditBoxImpl extends EditBoxImplBase {
             this._createTextArea();
         } else {
             this._createInput();
+        }
+        
+        if (sys.isMobile) {
+            this._createTextLabelBackgroundColor();
+            this._createTextRightIcon();
         }
 
         tabIndexUtil.add(this);
@@ -165,7 +173,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         const elem = this._edTxt;
         if (elem) {
             if (sys.isMobile) {
-                elem.style.width = `100%`;
+                elem.style.width = 'calc(100% - 14px)';
                 elem.style.height = `40px`;
             } else {
                 elem.style.width = `${width}px`;
@@ -200,9 +208,45 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._edTxt = ccdocument.createElement('textarea');
     }
 
+    private _createTextLabelBackgroundColor (): void {
+       this._textLabelBackgroundColor = ccdocument.createElement('div');
+       this._textLabelBackgroundColor!.style.width = '100%';
+       this._textLabelBackgroundColor!.style.height = '40px';
+       this._textLabelBackgroundColor!.style.position = 'fixed';
+       this._textLabelBackgroundColor!.style.bottom = '0px';
+       this._textLabelBackgroundColor!.style.left = '0px';
+       this._textLabelBackgroundColor!.style.backgroundColor = '#262D32';
+       this._textLabelBackgroundColor!.style.display = 'none';
+       this._textLabelBackgroundColor!.style.zIndex = '1';
+       this._textLabelBackgroundColor!.style.padding = '7px';
+       this._textLabelBackgroundColor!.style.boxSizing = 'content-box';
+    }
+
+    private _createTextRightIcon (): void {
+        this._textLabelRightIcon = ccdocument.createElement('div');
+        const svg = `
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 28px; height: 28px;">
+            <circle cx="40" cy="40" r="38" fill="#007AFF"/>
+            <path d="M52.4325 36.3312L41.6179 25.5165C40.7732 24.6719 39.4041 24.6719 38.5595 25.5165L27.7448 36.3312C26.9002 37.1758 26.9002 38.545 27.7448 39.3896C28.5894 40.2342 29.9586 40.2342 30.8032 39.3896L37.9258 32.267V53.0009C37.9258 54.1959 38.8937 55.1639 40.0887 55.1639C41.2837 55.1639 42.2517 54.1959 42.2517 53.0009V32.267L49.3743 39.3896C49.796 39.8114 50.3497 40.0233 50.9035 40.0233C51.4572 40.0233 52.0109 39.8124 52.4327 39.3896C53.2773 38.545 53.2773 37.1758 52.4327 36.3312H52.4325Z" fill="white"/>
+            </svg>
+        `;
+        this._textLabelRightIcon.innerHTML = svg;
+        this._textLabelRightIcon!.style.width = '28px';
+        this._textLabelRightIcon!.style.height = '28px';
+        this._textLabelRightIcon!.style.position = 'fixed';
+        this._textLabelRightIcon!.style.bottom = '13px';
+        this._textLabelRightIcon!.style.right = '13px';
+        this._textLabelRightIcon!.style.zIndex = '3';
+        this._textLabelRightIcon!.style.display = 'none';
+    }
+
     private _addDomToGameContainer (): void {
         if (game.container && this._edTxt) {
             game.container.appendChild(this._edTxt);
+            if (sys.isMobile) {
+                game.container.appendChild(this._textLabelBackgroundColor!);
+                game.container.appendChild(this._textLabelRightIcon!);
+            }
             ccdocument.head.appendChild(this._placeholderStyleSheet!);
         }
     }
@@ -228,6 +272,11 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (this._edTxt && this._delegate) {
             this._edTxt.style.display = '';
             this._delegate._hideLabels();
+
+            if (sys.isMobile) {
+                this._textLabelBackgroundColor!.style.display = '';
+                this._textLabelRightIcon!.style.display = '';
+            }
         }
         if (sys.isMobile) {
             this._showDomOnMobile();
@@ -239,6 +288,11 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (elem && this._delegate) {
             elem.style.display = 'none';
             this._delegate._showLabels();
+
+            if (sys.isMobile) {
+                this._textLabelBackgroundColor!.style.display = 'none';
+                this._textLabelRightIcon!.style.display = 'none';
+            }
         }
         if (sys.isMobile) {
             this._hideDomOnMobile();
@@ -462,6 +516,15 @@ export class EditBoxImpl extends EditBoxImplBase {
         elem.style.display = 'none';
         if (sys.isMobile) {
             elem.style.position = 'fixed';
+            elem.style.border = '2px solid #007AFF';
+            elem.style.boxSizing = 'border-box';
+            elem.style.borderRadius = '8px';
+            elem.style.margin = '7px';
+            elem.style.background = '#000';
+            elem.style.color = 'white';
+            elem.style.padding = '0px 36px 0 10px';
+            elem.style.zIndex = '2';
+            elem.style.boxShadow = '0px 0px 10px 0px rgba(0, 122, 255,0.8)';
         } else {
             elem.style.position = 'absolute';
         }
@@ -533,7 +596,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         const elem = this._edTxt;
         if (sys.isMobile) {
             elem.style.fontSize = `16px`;
-            elem.style.color = '#000000';
+            elem.style.color = 'white';
         } else {
             elem.style.fontSize = `${fontSize}px`;
             elem.style.color = textLabel.color.toCSS();
