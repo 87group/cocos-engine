@@ -106,6 +106,7 @@ export class EditBoxImpl extends EditBoxImplBase {
 
     private _textLabelBackgroundColor: HTMLDivElement | null = null;
     private _textLabelRightIcon: HTMLDivElement | null = null;
+    private _isMobile = sys.isMobile ? (sys.os == OS.ANDROID || sys.os == OS.OHOS):false;
     public init (delegate: EditBox): void {
         if (!delegate) {
             return;
@@ -118,7 +119,7 @@ export class EditBoxImpl extends EditBoxImplBase {
             this._createInput();
         }
         
-        if (sys.isMobile) {
+        if (this._isMobile) {
             this._createTextLabelBackgroundColor();
             this._createTextRightIcon();
         }
@@ -172,7 +173,7 @@ export class EditBoxImpl extends EditBoxImplBase {
     public setSize (width: number, height: number): void {
         const elem = this._edTxt;
         if (elem) {
-            if (sys.isMobile) {
+            if (this._isMobile) {
                 elem.style.width = 'calc(100% - 14px)';
                 elem.style.height = `40px`;
             } else {
@@ -243,7 +244,7 @@ export class EditBoxImpl extends EditBoxImplBase {
     private _addDomToGameContainer (): void {
         if (game.container && this._edTxt) {
             game.container.appendChild(this._edTxt);
-            if (sys.isMobile) {
+            if (this._isMobile) {
                 game.container.appendChild(this._textLabelBackgroundColor!);
                 game.container.appendChild(this._textLabelRightIcon!);
             }
@@ -265,6 +266,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._placeholderStyleSheet = null;
     }
 
+    private _scressHeight = window.innerHeight;
     private _showDom (): void {
         this._updateMaxLength();
         this._updateInputType();
@@ -272,14 +274,27 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (this._edTxt && this._delegate) {
             this._edTxt.style.display = '';
             this._delegate._hideLabels();
-
-            if (sys.isMobile) {
-                this._textLabelBackgroundColor!.style.display = '';
-                this._textLabelRightIcon!.style.display = '';
+            if (this._isMobile){
+                if (sys.os == OS.ANDROID || sys.os == OS.OHOS){
+                    this._edTxt.style.opacity ="0";
+                    //this._setInputBgStatus(false);
+                }else{
+                    this._setInputBgStatus(true);
+                }
             }
         }
-        if (sys.isMobile) {
+        if (this._isMobile) {
             this._showDomOnMobile();
+        }
+    }
+
+    private _setInputBgStatus(bShow:boolean){
+        if (bShow){
+            this._textLabelBackgroundColor!.style.display = '';
+            this._textLabelRightIcon!.style.display = '';
+        }else{
+            this._textLabelBackgroundColor!.style.display = 'none';
+            this._textLabelRightIcon!.style.display = 'none';
         }
     }
 
@@ -288,13 +303,11 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (elem && this._delegate) {
             elem.style.display = 'none';
             this._delegate._showLabels();
-
-            if (sys.isMobile) {
-                this._textLabelBackgroundColor!.style.display = 'none';
-                this._textLabelRightIcon!.style.display = 'none';
+            if (this._isMobile) {
+                this._setInputBgStatus(false);
             }
         }
-        if (sys.isMobile) {
+        if (this._isMobile) {
             this._hideDomOnMobile();
         }
     }
@@ -303,7 +316,6 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (sys.os !== OS.ANDROID && sys.os !== OS.OHOS) {
             return;
         }
-
         screenAdapter.handleResizeEvent = false;
         this._adjustWindowScroll();
     }
@@ -329,21 +341,30 @@ export class EditBoxImpl extends EditBoxImplBase {
         return false;
     }
 
+    private _timer:number = -1;
     private _adjustWindowScroll (): void {
-        setTimeout(() => {
-            if (ccwindow.scrollY < SCROLLY && !this._isElementInViewport()) {
-                this._edTxt!.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'smooth' });
-            }
-        }, DELAY_TIME);
+        if (this._timer > 0) clearTimeout(this._timer);
+        this._timer = setTimeout(() => {
+            //console.log("===_adjustWindowScroll==[][][]===", DELAY_TIME+10, this._scressHeight, window.innerHeight);
+            this._edTxt!.style.opacity ="1";
+            this._setInputBgStatus(true);
+            this._edTxt!.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'auto' });
+            this._timer = -1;
+
+            // this._edTxt!.style.display = '';
+            // this._edTxt!.focus();
+            // this._delegate?.focus();
+        }, DELAY_TIME+10);
     }
 
+    private _timer2:number = -1;
     private _scrollBackWindow (): void {
-        setTimeout(() => {
+        if (this._timer2 > 0) clearTimeout(this._timer2);
+        this._timer2 = setTimeout(() => {
             if (sys.browserType === BrowserType.WECHAT && sys.os === OS.IOS) {
                 if (ccwindow.top) {
                     ccwindow.top.scrollTo(0, 0);
                 }
-
                 return;
             }
 
@@ -409,7 +430,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         const ty = _matrix_temp.m13;
 
         const matrix = `matrix(${a},${-b},${-c},${d},${tx},${-ty})`;
-        if (!sys.isMobile) {
+        if (!this._isMobile) {
             this._edTxt.style.transform = matrix;
             this._edTxt.style['-webkit-transform'] = matrix;
             this._edTxt.style['transform-origin'] = '0px 100% 0px';
@@ -503,7 +524,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         let elem = this._edTxt;
         elem.style.color = '#000000';
         elem.style.border = '0px';
-        if (sys.isMobile) {
+        if (this._isMobile) {
             elem.style.background = '#FFFFFF';
         } else {
             elem.style.background = 'transparent';
@@ -514,7 +535,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         elem.style.padding = '0';
         elem.style.textTransform = 'none';
         elem.style.display = 'none';
-        if (sys.isMobile) {
+        if (this._isMobile) {
             elem.style.position = 'fixed';
             elem.style.border = '2px solid #007AFF';
             elem.style.boxSizing = 'border-box';
@@ -529,7 +550,7 @@ export class EditBoxImpl extends EditBoxImplBase {
             elem.style.position = 'absolute';
         }
         elem.style.bottom = '0px';
-        if (sys.isMobile) {
+        if (this._isMobile) {
             elem.style.left = `0px`;
         } else {
             elem.style.left = `${LEFT_PADDING}px`;
@@ -594,7 +615,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         }
 
         const elem = this._edTxt;
-        if (sys.isMobile) {
+        if (this._isMobile) {
             elem.style.fontSize = `16px`;
             elem.style.color = 'white';
         } else {
@@ -707,11 +728,11 @@ export class EditBoxImpl extends EditBoxImplBase {
         };
 
         cbs.onClick = (): void => {
-            if (this._editing) {
-                if (sys.isMobile) {
-                    this._adjustWindowScroll();
-                }
-            }
+            // if (this._editing) {
+            //     if (this._isMobile) {
+            //         this._adjustWindowScroll();
+            //     }
+            // }
         };
 
         cbs.onKeydown = (e): void => {
@@ -732,7 +753,7 @@ export class EditBoxImpl extends EditBoxImplBase {
 
         cbs.onBlur = (): void => {
             // on mobile, sometimes input element doesn't fire compositionend event
-            if (sys.isMobile && inputLock) {
+            if (this._isMobile && inputLock) {
                 cbs.compositionEnd();
             }
             this._editing = false;
@@ -770,5 +791,8 @@ export class EditBoxImpl extends EditBoxImplBase {
         cbs.onKeydown = null;
         cbs.onBlur = null;
         cbs.onClick = null;
+
+        if (this._timer > 0)clearTimeout(this._timer);
+        if (this._timer2 > 0)clearTimeout(this._timer2);
     }
 }
