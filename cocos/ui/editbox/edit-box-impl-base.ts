@@ -86,4 +86,8 @@ export class EditBoxImplBase {
     public endEditing (): void {
         // To be overrode
     }
+
+    public set useStyle(value:boolean){
+
+    }
 }

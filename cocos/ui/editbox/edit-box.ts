@@ -409,6 +409,14 @@ export class EditBox extends Component {
 
     private _isLabelVisible = false;
 
+    private _bUseStyle:boolean = false;
+    public set useStyle(buse:boolean){
+        this._bUseStyle = buse;
+    }
+    public get useStyle(){
+        return this._bUseStyle;
+    }
+
     public __preload (): void {
         this._init();
     }
