@@ -119,8 +119,10 @@ export class EditBoxImpl extends EditBoxImplBase {
             this._createInput();
         }
         
-        this._createTextLabelBackgroundColor();
-        this._createTextRightIcon();
+        if (this._isMobile) {
+            this._createTextLabelBackgroundColor();
+            this._createTextRightIcon();
+        }
 
         tabIndexUtil.add(this);
         this.setTabIndex(delegate.tabIndex);
@@ -136,7 +138,6 @@ export class EditBoxImpl extends EditBoxImplBase {
         screenAdapter.off('window-resize', this._resize, this);
         this._removeEventListeners();
         this._removeDomFromGameContainer();
-        this._removeSubDomFromGameContainer();
 
         tabIndexUtil.remove(this);
 
@@ -146,14 +147,6 @@ export class EditBoxImpl extends EditBoxImplBase {
         }
 
         this._delegate = null;
-    }
-
-    public get _useStyle(){
-        if(this._delegate){
-            return this._delegate.useStyle;
-        }
-
-        return false;
     }
 
     private _resize (): void {
@@ -194,19 +187,12 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (_currentEditBoxImpl && _currentEditBoxImpl !== this) {
             _currentEditBoxImpl.setFocus(false);
         }
-        this._setInputBgStatus(false);
-
-        //下一帧处理
-        setTimeout(() => {
-            game.emit('exitbox_begin_edit_scroll', this._delegate);
-            this._editing = true;
-            _currentEditBoxImpl = this;
-            this._delegate!._editBoxEditingDidBegan();
-            this._showDom();
-            // this._showDomOnMobile();
-            this._edTxt!.style.display = '';
-            this._edTxt!.focus();
-        }, game.frameTime);
+        game.emit('exitbox_begin_edit_scroll', this._delegate);
+        this._editing = true;
+        _currentEditBoxImpl = this;
+        this._delegate!._editBoxEditingDidBegan();
+        this._showDom();
+        this._edTxt!.focus();
     }
 
     public endEditing (): void {
@@ -258,25 +244,12 @@ export class EditBoxImpl extends EditBoxImplBase {
     private _addDomToGameContainer (): void {
         if (game.container && this._edTxt) {
             game.container.appendChild(this._edTxt);
-            game.container.appendChild(this._textLabelBackgroundColor!);
-            game.container.appendChild(this._textLabelRightIcon!);
+            if (this._isMobile) {
+                game.container.appendChild(this._textLabelBackgroundColor!);
+                game.container.appendChild(this._textLabelRightIcon!);
+            }
             ccdocument.head.appendChild(this._placeholderStyleSheet!);
         }
-    }
-
-    private _removeSubDomFromGameContainer (): void {
-        const hasElem = contains(game.container, this._textLabelBackgroundColor);
-        if (hasElem && this._textLabelBackgroundColor) {
-            game.container!.removeChild(this._textLabelBackgroundColor);
-        }
-
-        const hasElem1 = contains(game.container, this._textLabelRightIcon);
-        if (hasElem1 && this._textLabelRightIcon) {
-            game.container!.removeChild(this._textLabelRightIcon);
-        }
-       
-        this._textLabelBackgroundColor = null;
-        this._textLabelRightIcon = null;
     }
 
     private _removeDomFromGameContainer (): void {
@@ -295,26 +268,24 @@ export class EditBoxImpl extends EditBoxImplBase {
 
     private _scressHeight = window.innerHeight;
     private _showDom (): void {
-        if (this._edTxt && this._delegate) {
-            this._delegate._hideLabels();
-        }
-        if(this._useStyle && this._edTxt){
-            this._edTxt!.style.border = '2px solid #007AFF';
-            this._edTxt!.style.boxSizing = 'border-box';
-            this._edTxt!.style.borderRadius = '8px';
-            this._edTxt!.style.margin = '7px';
-            this._edTxt!.style.background = '#000';
-            this._edTxt!.style.color = 'white';
-            this._edTxt!.style.padding = '0px 36px 0 10px';
-            this._edTxt!.style.zIndex = '2';
-            this._edTxt!.style.boxShadow = '0px 0px 10px 0px rgba(0, 122, 255,0.8)';
-        }else{
-            //默认样式
-        }
-
         this._updateMaxLength();
         this._updateInputType();
         this._updateStyleSheet();
+        if (this._edTxt && this._delegate) {
+            this._edTxt.style.display = '';
+            this._delegate._hideLabels();
+            if (this._isMobile){
+                if (sys.os == OS.ANDROID || sys.os == OS.OHOS){
+                    this._edTxt.style.opacity ="0";
+                    //this._setInputBgStatus(false);
+                }else{
+                    this._setInputBgStatus(true);
+                }
+            }
+        }
+        if (this._isMobile) {
+            this._showDomOnMobile();
+        }
     }
 
     private _setInputBgStatus(bShow:boolean){
@@ -332,18 +303,28 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (elem && this._delegate) {
             elem.style.display = 'none';
             this._delegate._showLabels();
-            this._setInputBgStatus(false);
+            if (this._isMobile) {
+                this._setInputBgStatus(false);
+            }
         }
-        this._hideDomOnMobile();
+        if (this._isMobile) {
+            this._hideDomOnMobile();
+        }
     }
 
     private _showDomOnMobile (): void {
+        if (sys.os !== OS.ANDROID && sys.os !== OS.OHOS) {
+            return;
+        }
         screenAdapter.handleResizeEvent = false;
         this._adjustWindowScroll();
     }
 
     private _hideDomOnMobile (): void {
-        screenAdapter.handleResizeEvent = true;
+        if (sys.os === OS.ANDROID || sys.os === OS.OHOS) {
+            screenAdapter.handleResizeEvent = true;
+        }
+
         this._scrollBackWindow();
     }
 
@@ -364,8 +345,15 @@ export class EditBoxImpl extends EditBoxImplBase {
     private _adjustWindowScroll (): void {
         if (this._timer > 0) clearTimeout(this._timer);
         this._timer = setTimeout(() => {
+            //console.log("===_adjustWindowScroll==[][][]===", DELAY_TIME+10, this._scressHeight, window.innerHeight);
+            this._edTxt!.style.opacity ="1";
+            this._setInputBgStatus(true);
             this._edTxt!.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'auto' });
             this._timer = -1;
+
+            // this._edTxt!.style.display = '';
+            // this._edTxt!.focus();
+            // this._delegate?.focus();
         }, DELAY_TIME+10);
     }
 
@@ -549,6 +537,15 @@ export class EditBoxImpl extends EditBoxImplBase {
         elem.style.display = 'none';
         if (this._isMobile) {
             elem.style.position = 'fixed';
+            elem.style.border = '2px solid #007AFF';
+            elem.style.boxSizing = 'border-box';
+            elem.style.borderRadius = '8px';
+            elem.style.margin = '7px';
+            elem.style.background = '#000';
+            elem.style.color = 'white';
+            elem.style.padding = '0px 36px 0 10px';
+            elem.style.zIndex = '2';
+            elem.style.boxShadow = '0px 0px 10px 0px rgba(0, 122, 255,0.8)';
         } else {
             elem.style.position = 'absolute';
         }
@@ -584,7 +581,6 @@ export class EditBoxImpl extends EditBoxImplBase {
             // NOTE: we don't show placeholder any more when editBox is editing
             // elem.placeholder = delegate.placeholder;
             // this._updatePlaceholderLabel(delegate.placeholderLabel);
-            this._setInputBgStatus(this._useStyle);
         }
     }
 
@@ -757,7 +753,7 @@ export class EditBoxImpl extends EditBoxImplBase {
 
         cbs.onBlur = (): void => {
             // on mobile, sometimes input element doesn't fire compositionend event
-            if (inputLock) {
+            if (this._isMobile && inputLock) {
                 cbs.compositionEnd();
             }
             this._editing = false;
@@ -767,16 +763,11 @@ export class EditBoxImpl extends EditBoxImplBase {
             this._delegate!._editBoxEditingDidEnded();
         };
 
-        cbs.onfocus = ()=>{
-            this._showDomOnMobile();
-        }
-
         elem.addEventListener('compositionstart', cbs.compositionStart as EventListenerOrEventListenerObject);
         elem.addEventListener('compositionend', cbs.compositionEnd as EventListenerOrEventListenerObject);
         elem.addEventListener('input', cbs.onInput as EventListenerOrEventListenerObject);
         elem.addEventListener('keydown', cbs.onKeydown as EventListenerOrEventListenerObject);
         elem.addEventListener('blur', cbs.onBlur as EventListenerOrEventListenerObject);
-        elem.addEventListener('focus', cbs.onfocus as EventListenerOrEventListenerObject);
         elem.addEventListener('touchstart', cbs.onClick as EventListenerOrEventListenerObject);
     }
     private _removeEventListeners (): void {
