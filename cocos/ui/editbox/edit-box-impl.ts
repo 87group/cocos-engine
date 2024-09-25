@@ -106,7 +106,6 @@ export class EditBoxImpl extends EditBoxImplBase {
 
     private _textLabelBackgroundColor: HTMLDivElement | null = null;
     private _textLabelRightIcon: HTMLDivElement | null = null;
-    private _isMobile = sys.isMobile ? (sys.os == OS.ANDROID || sys.os == OS.OHOS):false;
     public init (delegate: EditBox): void {
         if (!delegate) {
             return;
@@ -119,7 +118,7 @@ export class EditBoxImpl extends EditBoxImplBase {
             this._createInput();
         }
         
-        if (this._isMobile) {
+        if (this.useStyle) {
             this._createTextLabelBackgroundColor();
             this._createTextRightIcon();
         }
@@ -131,6 +130,14 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._addDomToGameContainer();
         View.instance.on('canvas-resize', this._resize, this);
         screenAdapter.on('window-resize', this._resize, this);
+    }
+
+    public get useStyle(){
+        if(this._delegate){
+            return this._delegate.useStyle;
+        }
+
+        return false;
     }
 
     public clear (): void {
@@ -173,7 +180,7 @@ export class EditBoxImpl extends EditBoxImplBase {
     public setSize (width: number, height: number): void {
         const elem = this._edTxt;
         if (elem) {
-            if (this._isMobile) {
+            if (this.useStyle) {
                 elem.style.width = 'calc(100% - 14px)';
                 elem.style.height = `40px`;
             } else {
@@ -244,7 +251,7 @@ export class EditBoxImpl extends EditBoxImplBase {
     private _addDomToGameContainer (): void {
         if (game.container && this._edTxt) {
             game.container.appendChild(this._edTxt);
-            if (this._isMobile) {
+            if (this.useStyle) {
                 game.container.appendChild(this._textLabelBackgroundColor!);
                 game.container.appendChild(this._textLabelRightIcon!);
             }
@@ -274,7 +281,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (this._edTxt && this._delegate) {
             this._edTxt.style.display = '';
             this._delegate._hideLabels();
-            if (this._isMobile){
+            if (this.useStyle){
                 if (sys.os == OS.ANDROID || sys.os == OS.OHOS){
                     this._edTxt.style.opacity ="0";
                     //this._setInputBgStatus(false);
@@ -283,7 +290,7 @@ export class EditBoxImpl extends EditBoxImplBase {
                 }
             }
         }
-        if (this._isMobile) {
+        if (this.useStyle) {
             this._showDomOnMobile();
         }
     }
@@ -303,11 +310,11 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (elem && this._delegate) {
             elem.style.display = 'none';
             this._delegate._showLabels();
-            if (this._isMobile) {
+            if (this.useStyle) {
                 this._setInputBgStatus(false);
             }
         }
-        if (this._isMobile) {
+        if (this.useStyle) {
             this._hideDomOnMobile();
         }
     }
@@ -430,7 +437,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         const ty = _matrix_temp.m13;
 
         const matrix = `matrix(${a},${-b},${-c},${d},${tx},${-ty})`;
-        if (!this._isMobile) {
+        if (!this.useStyle) {
             this._edTxt.style.transform = matrix;
             this._edTxt.style['-webkit-transform'] = matrix;
             this._edTxt.style['transform-origin'] = '0px 100% 0px';
@@ -524,7 +531,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         let elem = this._edTxt;
         elem.style.color = '#000000';
         elem.style.border = '0px';
-        if (this._isMobile) {
+        if (this.useStyle) {
             elem.style.background = '#FFFFFF';
         } else {
             elem.style.background = 'transparent';
@@ -535,7 +542,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         elem.style.padding = '0';
         elem.style.textTransform = 'none';
         elem.style.display = 'none';
-        if (this._isMobile) {
+        if (this.useStyle) {
             elem.style.position = 'fixed';
             elem.style.border = '2px solid #007AFF';
             elem.style.boxSizing = 'border-box';
@@ -550,7 +557,7 @@ export class EditBoxImpl extends EditBoxImplBase {
             elem.style.position = 'absolute';
         }
         elem.style.bottom = '0px';
-        if (this._isMobile) {
+        if (this.useStyle) {
             elem.style.left = `0px`;
         } else {
             elem.style.left = `${LEFT_PADDING}px`;
@@ -615,7 +622,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         }
 
         const elem = this._edTxt;
-        if (this._isMobile) {
+        if (this.useStyle) {
             elem.style.fontSize = `16px`;
             elem.style.color = 'white';
         } else {
@@ -753,7 +760,7 @@ export class EditBoxImpl extends EditBoxImplBase {
 
         cbs.onBlur = (): void => {
             // on mobile, sometimes input element doesn't fire compositionend event
-            if (this._isMobile && inputLock) {
+            if (this.useStyle && inputLock) {
                 cbs.compositionEnd();
             }
             this._editing = false;
