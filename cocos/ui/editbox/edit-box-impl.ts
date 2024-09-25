@@ -290,12 +290,13 @@ export class EditBoxImpl extends EditBoxImplBase {
                 }
             }
         }
-        if (this.useStyle) {
+        if (sys.isMobile) {
             this._showDomOnMobile();
         }
     }
 
-    private _setInputBgStatus(bShow:boolean){
+    private _setInputBgStatus(bShow:boolean) {
+        if (!this._textLabelBackgroundColor || !this._textLabelRightIcon) return;
         if (bShow){
             this._textLabelBackgroundColor!.style.display = '';
             this._textLabelRightIcon!.style.display = '';
@@ -314,7 +315,7 @@ export class EditBoxImpl extends EditBoxImplBase {
                 this._setInputBgStatus(false);
             }
         }
-        if (this.useStyle) {
+        if (sys.isMobile) {
             this._hideDomOnMobile();
         }
     }
@@ -760,7 +761,7 @@ export class EditBoxImpl extends EditBoxImplBase {
 
         cbs.onBlur = (): void => {
             // on mobile, sometimes input element doesn't fire compositionend event
-            if (this.useStyle && inputLock) {
+            if (sys.isMobile && inputLock) {
                 cbs.compositionEnd();
             }
             this._editing = false;
