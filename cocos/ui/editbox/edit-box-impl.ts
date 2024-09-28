@@ -25,6 +25,7 @@
  THE SOFTWARE.
 */
 
+
 import { screenAdapter } from 'pal/screen-adapter';
 import { BitmapFont } from '../../2d/assets';
 import { director } from '../../game/director';
@@ -40,6 +41,7 @@ import { InputFlag, InputMode, KeyboardReturnType } from './types';
 import { EditBoxImplBase } from './edit-box-impl-base';
 import { BrowserType, OS } from '../../../pal/system-info/enum-type';
 import { ccwindow } from '../../core/global-exports';
+
 
 const ccdocument = ccwindow.document;
 
@@ -64,15 +66,15 @@ export class EditBoxImpl extends EditBoxImplBase {
     /**
      * @deprecated since v3.5.0, this is an engine private interface that will be removed in the future.
      */
-    public _inputMode: InputMode = -1;
+    public _inputMode: InputMode = InputMode.ANY;
     /**
      * @deprecated since v3.5.0, this is an engine private interface that will be removed in the future.
      */
-    public _inputFlag: InputFlag = -1;
+    public _inputFlag: InputFlag = InputFlag.DEFAULT;
     /**
      * @deprecated since v3.5.0, this is an engine private interface that will be removed in the future.
      */
-    public _returnType: KeyboardReturnType = -1;
+    public _returnType: KeyboardReturnType = KeyboardReturnType.DEFAULT;
     /**
      * @deprecated since v3.5.0, this is an engine private interface that will be removed in the future.
      */
@@ -102,7 +104,6 @@ export class EditBoxImpl extends EditBoxImplBase {
     private _placeholderLineHeight = null;
     private _placeholderStyleSheet: HTMLStyleElement | null = null;
     private _domId = `EditBoxId_${++_domCount}`;
-    private _forceUpdate: boolean = false;
 
     private _textLabelBackgroundColor: HTMLDivElement | null = null;
     private _textLabelRightIcon: HTMLDivElement | null = null;
@@ -128,8 +129,6 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._initStyleSheet();
         this._registerEventListeners();
         this._addDomToGameContainer();
-        View.instance.on('canvas-resize', this._resize, this);
-        screenAdapter.on('window-resize', this._resize, this);
     }
 
     public get useStyle(){
@@ -141,8 +140,6 @@ export class EditBoxImpl extends EditBoxImplBase {
     }
 
     public clear (): void {
-        View.instance.off('canvas-resize', this._resize, this);
-        screenAdapter.off('window-resize', this._resize, this);
         this._removeEventListeners();
         this._removeDomFromGameContainer();
         this._removeSubDomFromGameContainer();
@@ -157,19 +154,8 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._delegate = null;
     }
 
-    private _resize (): void {
-        this._forceUpdate = true;
-    }
-
-    // The beforeDraw function should be used here.
-    // Because many attributes are modified after the update is executed,
-    // this can lead to problems with incorrect coordinates.
-    public beforeDraw (): void {
-        const node = this._delegate!.node;
-        if (!node.hasChangedFlags && !this._forceUpdate) {
-            return;
-        }
-        this._forceUpdate = false;
+    public update (): void {
+        if (!this._dirtyFlag) return;
         this._updateMatrix();
     }
 
@@ -197,6 +183,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         }
         game.emit('exitbox_begin_edit_scroll', this._delegate);
         this._editing = true;
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         _currentEditBoxImpl = this;
         this._delegate!._editBoxEditingDidBegan();
         this._showDom();
@@ -290,8 +277,6 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._textLabelBackgroundColor = null;
         this._textLabelRightIcon = null;
     }
-
-    private _scressHeight = window.innerHeight;
     private _showDom (): void {
         this._updateMaxLength();
         this._updateInputType();
@@ -342,6 +327,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (sys.os !== OS.ANDROID && sys.os !== OS.OHOS) {
             return;
         }
+
         screenAdapter.handleResizeEvent = false;
         this._adjustWindowScroll();
     }
@@ -354,43 +340,23 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._scrollBackWindow();
     }
 
-    private _isElementInViewport (): boolean {
-        if (this._edTxt) {
-            const rect = this._edTxt.getBoundingClientRect();
-
-            return (
-                rect.top >= 0 && rect.left >= 0
-                && rect.bottom <= (ccwindow.innerHeight || ccdocument.documentElement.clientHeight)
-                && rect.right <= (ccwindow.innerWidth || ccdocument.documentElement.clientWidth)
-            );
-        }
-        return false;
-    }
-
-    private _timer:number = -1;
     private _adjustWindowScroll (): void {
-        if (this._timer > 0) clearTimeout(this._timer);
-        this._timer = setTimeout(() => {
-            //console.log("===_adjustWindowScroll==[][][]===", DELAY_TIME+10, this._scressHeight, window.innerHeight);
-            this._edTxt!.style.opacity ="1";
-            this._setInputBgStatus(true);
-            this._edTxt!.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'auto' });
-            this._timer = -1;
-
-            // this._edTxt!.style.display = '';
-            // this._edTxt!.focus();
-            // this._delegate?.focus();
-        }, DELAY_TIME+10);
+        setTimeout(() => {
+            if (ccwindow.scrollY < SCROLLY) {
+		        this._edTxt!.style.opacity ="1";
+                this._setInputBgStatus(true);
+                this._edTxt!.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'smooth' });
+            }
+        }, DELAY_TIME);
     }
 
-    private _timer2:number = -1;
     private _scrollBackWindow (): void {
-        if (this._timer2 > 0) clearTimeout(this._timer2);
-        this._timer2 = setTimeout(() => {
+        setTimeout(() => {
             if (sys.browserType === BrowserType.WECHAT && sys.os === OS.IOS) {
                 if (ccwindow.top) {
                     ccwindow.top.scrollTo(0, 0);
                 }
+
                 return;
             }
 
@@ -750,15 +716,16 @@ export class EditBoxImpl extends EditBoxImplBase {
             if (maxLength >= 0) {
                 elem.value = elem.value.slice(0, maxLength);
             }
+            console.log("---neween-----",elem.value);
             delegate!._editBoxTextChanged(elem.value);
         };
 
         cbs.onClick = (): void => {
-            // if (this._editing) {
-            //     if (this._isMobile) {
-            //         this._adjustWindowScroll();
-            //     }
-            // }
+            if (this._editing) {
+                if (sys.isMobile) {
+                    this._adjustWindowScroll();
+                }
+            }
         };
 
         cbs.onKeydown = (e): void => {
@@ -786,7 +753,7 @@ export class EditBoxImpl extends EditBoxImplBase {
             _currentEditBoxImpl = null;
             this._hideDom();
             game.emit('exitbox_end_edit_scroll', this._delegate);
-            this._delegate!._editBoxEditingDidEnded();
+            this._delegate!._editBoxEditingDidEnded(elem.value);
         };
 
         elem.addEventListener('compositionstart', cbs.compositionStart as EventListenerOrEventListenerObject);
@@ -817,8 +784,5 @@ export class EditBoxImpl extends EditBoxImplBase {
         cbs.onKeydown = null;
         cbs.onBlur = null;
         cbs.onClick = null;
-
-        if (this._timer > 0)clearTimeout(this._timer);
-        if (this._timer2 > 0)clearTimeout(this._timer2);
     }
 }
