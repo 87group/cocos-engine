@@ -145,6 +145,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         screenAdapter.off('window-resize', this._resize, this);
         this._removeEventListeners();
         this._removeDomFromGameContainer();
+        this._removeSubDomFromGameContainer();
 
         tabIndexUtil.remove(this);
 
@@ -246,6 +247,9 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._textLabelRightIcon!.style.right = '13px';
         this._textLabelRightIcon!.style.zIndex = '3';
         this._textLabelRightIcon!.style.display = 'none';
+        this._textLabelRightIcon!.addEventListener('touchstart', ()=>{
+            this._delegate!._editBoxEditingReturn();
+        });
     }
 
     private _addDomToGameContainer (): void {
@@ -271,6 +275,20 @@ export class EditBoxImpl extends EditBoxImplBase {
 
         this._edTxt = null;
         this._placeholderStyleSheet = null;
+    }
+
+    private _removeSubDomFromGameContainer (): void {
+        const hasElem = contains(game.container, this._textLabelRightIcon);
+        if (hasElem && this._textLabelRightIcon) {
+            game.container!.removeChild(this._textLabelRightIcon);
+        }
+        const hasElem2 = contains(game.container, this._textLabelBackgroundColor);
+        if (hasElem2) {
+            game.container!.removeChild(this._textLabelBackgroundColor!);
+        }
+
+        this._textLabelBackgroundColor = null;
+        this._textLabelRightIcon = null;
     }
 
     private _scressHeight = window.innerHeight;
