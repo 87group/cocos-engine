@@ -716,7 +716,6 @@ export class EditBoxImpl extends EditBoxImplBase {
             if (maxLength >= 0) {
                 elem.value = elem.value.slice(0, maxLength);
             }
-            console.log("---neween-----",elem.value);
             delegate!._editBoxTextChanged(elem.value);
         };
 
