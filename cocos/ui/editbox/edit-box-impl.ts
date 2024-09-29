@@ -720,11 +720,11 @@ export class EditBoxImpl extends EditBoxImplBase {
         };
 
         cbs.onClick = (): void => {
-            if (this._editing) {
-                if (sys.isMobile) {
-                    this._adjustWindowScroll();
-                }
-            }
+            // if (this._editing) {
+            //     if (sys.isMobile) {
+            //         this._adjustWindowScroll();
+            //     }
+            // }
         };
 
         cbs.onKeydown = (e): void => {
