@@ -412,6 +412,13 @@ export class EditBox extends Component {
     constructor () {
         super();
     }
+    private _bUseStyle:boolean = false;
+    public set useStyle(buse:boolean){
+        this._bUseStyle = buse;
+    }
+    public get useStyle(){
+        return this._bUseStyle;
+    }
 
     public __preload (): void {
         this._init();
@@ -427,9 +434,9 @@ export class EditBox extends Component {
         }
     }
 
-    private _beforeDraw (): void {
+    public update (): void {
         if (this._impl) {
-            this._impl.beforeDraw();
+            this._impl.update();
         }
     }
 
@@ -444,7 +451,6 @@ export class EditBox extends Component {
     }
 
     public onDestroy (): void {
-        director.off(Director.EVENT_BEFORE_DRAW, this._beforeDraw, this);
         if (this._impl) {
             this._impl.clear();
         }
@@ -498,6 +504,9 @@ export class EditBox extends Component {
     public _editBoxEditingDidBegan (): void {
         ComponentEventHandler.emitEvents(this.editingDidBegan, this);
         this.node.emit(EventType.EDITING_DID_BEGAN, this);
+        if (this._impl) {
+            this._impl._dirtyFlag = true;
+        }
     }
 
     /**
@@ -509,6 +518,9 @@ export class EditBox extends Component {
     public _editBoxEditingDidEnded (text?: string): void {
         ComponentEventHandler.emitEvents(this.editingDidEnded, this);
         this.node.emit(EventType.EDITING_DID_ENDED, this, text);
+        if (this._impl) {
+            this._impl._dirtyFlag = false;
+        }
     }
 
     /**
@@ -573,7 +585,6 @@ export class EditBox extends Component {
         this._updateTextLabel();
         this._isLabelVisible = true;
         this.node.on(NodeEventType.SIZE_CHANGED, this._resizeChildNodes, this);
-        director.on(Director.EVENT_BEFORE_DRAW, this._beforeDraw, this);
 
         const impl = this._impl = new EditBox._EditBoxImpl();
         impl.init(this);

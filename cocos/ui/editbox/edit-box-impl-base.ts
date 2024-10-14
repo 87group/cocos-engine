@@ -37,6 +37,11 @@ export class EditBoxImplBase {
      */
     public _delegate: EditBox | null = null;
 
+    /**
+     * @engineInternal dirty flag to update the matrix
+     */
+    public _dirtyFlag: boolean | null = false;
+
     public init (delegate: EditBox): void {
         // To be overrode
     }
@@ -45,7 +50,7 @@ export class EditBoxImplBase {
         // To be overrode
     }
 
-    public beforeDraw (): void {
+    public update (): void {
         // To be overrode
     }
 
@@ -85,5 +90,9 @@ export class EditBoxImplBase {
 
     public endEditing (): void {
         // To be overrode
+    }
+
+    public set useStyle(value:boolean){
+
     }
 }

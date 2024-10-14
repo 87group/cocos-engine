@@ -24,6 +24,8 @@
  ****************************************************************************/
 package com.cocos.lib;
 
+import org.json.JSONException;
+
 public class JsbBridge {
     public interface ICallback{
         /**
@@ -32,11 +34,11 @@ public class JsbBridge {
          * @param arg0 as input
          * @param arg1 as input
          */
-        void onScript(String arg0, String arg1);
+        void onScript(String arg0, String arg1) throws JSONException;
     }
     private static ICallback callback;
 
-    private static void callByScript(String arg0, String arg1){
+    private static void callByScript(String arg0, String arg1) throws JSONException {
         if(JsbBridge.callback != null)
             callback.onScript(arg0, arg1);
     }

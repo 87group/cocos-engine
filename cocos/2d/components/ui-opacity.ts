@@ -49,7 +49,6 @@ export class UIOpacity extends Component {
     constructor () {
         super();
     }
-
     /**
      * @en
      * The parent node's opacity.
@@ -152,7 +151,9 @@ export class UIOpacity extends Component {
                 // there is a just UIRenderer but no UIOpacity on the node, we should just transport the parentOpacity to the node.
                 render.renderEntity.localOpacity = parentOpacity;
             }
-            render.node._uiProps.localOpacity = render.renderEntity.localOpacity;
+            if (JSB) {
+                render.node._uiProps.localOpacity = render.renderEntity.localOpacity;
+            }
             //No need for recursion here. Because it doesn't affect the capacity of the child nodes.
             return;
         }
