@@ -212,6 +212,7 @@ export class EditBoxImpl extends EditBoxImplBase {
 
     private _createTextLabelBackgroundColor (): void {
        this._textLabelBackgroundColor = ccdocument.createElement('div');
+       this._textLabelBackgroundColor!.id = 'TextLabelBackground';
        this._textLabelBackgroundColor!.style.width = '100%';
        this._textLabelBackgroundColor!.style.height = '40px';
        this._textLabelBackgroundColor!.style.position = 'fixed';
@@ -233,6 +234,7 @@ export class EditBoxImpl extends EditBoxImplBase {
             </svg>
         `;
         this._textLabelRightIcon.innerHTML = svg;
+        this._textLabelRightIcon!.id = 'TextRightIcon';
         this._textLabelRightIcon!.style.width = '28px';
         this._textLabelRightIcon!.style.height = '28px';
         this._textLabelRightIcon!.style.position = 'fixed';
