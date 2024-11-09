@@ -138,11 +138,11 @@ export class EditBoxImpl extends EditBoxImplBase {
     }
 
     public get useStyle(){
-        if(this._delegate){
-            return sys.isMobile && this._delegate.useStyle;
-        }
+        // if(this._delegate){
+        //     return sys.isMobile && this._delegate.useStyle;
+        // }
 
-        return false;
+        return true;
     }
 
     public clear (): void {
@@ -286,6 +286,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._textLabelRightIcon = null;
     }
     private _showDom (): void {
+        this._hideTimer != -1 && clearTimeout(this._hideTimer);
         this._updateMaxLength();
         this._updateInputType();
         this._updateStyleSheet();
@@ -318,6 +319,8 @@ export class EditBoxImpl extends EditBoxImplBase {
     }
 
     private _hideDom (): void {
+        this._showTimer != -1 && clearTimeout(this._showTimer);
+
         const elem = this._edTxt;
         if (elem && this._delegate) {
             elem.style.display = 'none';
@@ -348,8 +351,9 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._scrollBackWindow();
     }
 
+    private _showTimer: number = -1;
     private _adjustWindowScroll (): void {
-        setTimeout(() => {
+        this._showTimer = setTimeout(() => {
             if (ccwindow.scrollY < SCROLLY) {
 		        this._edTxt!.style.opacity ="1";
                 this._setInputBgStatus(true);
@@ -358,8 +362,9 @@ export class EditBoxImpl extends EditBoxImplBase {
         }, DELAY_TIME);
     }
 
+    private _hideTimer: number = -1;
     private _scrollBackWindow (): void {
-        setTimeout(() => {
+        this._hideTimer = setTimeout(() => {
             if (sys.browserType === BrowserType.WECHAT && sys.os === OS.IOS) {
                 if (ccwindow.top) {
                     ccwindow.top.scrollTo(0, 0);
