@@ -138,11 +138,11 @@ export class EditBoxImpl extends EditBoxImplBase {
     }
 
     public get useStyle(){
-        // if(this._delegate){
-        //     return sys.isMobile && this._delegate.useStyle;
-        // }
+        if (this._delegate) {
+            return sys.isMobile && this._delegate.useStyle;
+        }
 
-        return true;
+        return false;
     }
 
     public clear (): void {
