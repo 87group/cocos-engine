@@ -320,13 +320,8 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (this._edTxt && this._delegate) {
             this._edTxt.style.display = '';
             this._delegate._hideLabels();
-            if (this.useStyle){
-                if (sys.os == OS.ANDROID || sys.os == OS.OHOS){
-                    this._edTxt.style.opacity ="0";
-                    //this._setInputBgStatus(false);
-                }else{
-                    this._setInputBgStatus(true);
-                }
+            if (this.useStyle) {
+                this._setInputBgStatus(true);
             }
         }
         if (sys.isMobile) {
@@ -400,7 +395,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (!HTML5) return;
         this._showTimer = setTimeout(() => {
             if (ccwindow.scrollY < SCROLLY && !this._isElementInViewport()) {
-                this._edTxt!.style.opacity ="1";
+                this._edTxt!.style.opacity = "1";
                 this._setInputBgStatus(true);
                 this._edTxt!.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'smooth' });
             }
