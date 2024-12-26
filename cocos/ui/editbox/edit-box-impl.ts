@@ -25,6 +25,7 @@
  THE SOFTWARE.
 */
 
+
 import { screenAdapter } from 'pal/screen-adapter';
 import { HTML5 } from 'internal:constants';
 import { BitmapFont } from '../../2d/assets';
@@ -41,6 +42,7 @@ import { InputFlag, InputMode, KeyboardReturnType } from './types';
 import { EditBoxImplBase } from './edit-box-impl-base';
 import { BrowserType, OS } from '../../../pal/system-info/enum-type';
 import { ccwindow } from '../../core/global-exports';
+
 
 const ccdocument = ccwindow.document;
 
@@ -109,6 +111,9 @@ export class EditBoxImpl extends EditBoxImplBase {
         super();
     }
 
+
+    private _textLabelBackgroundColor: HTMLDivElement | null = null;
+    private _textLabelRightIcon: HTMLDivElement | null = null;
     public init (delegate: EditBox): void {
         if (!HTML5) return;
         if (!delegate) {
@@ -121,14 +126,25 @@ export class EditBoxImpl extends EditBoxImplBase {
         } else {
             this._createInput();
         }
+        
+        if (this.useStyle) {
+            this._createTextLabelBackgroundColor();
+            this._createTextRightIcon();
+        }
 
         tabIndexUtil.add(this);
         this.setTabIndex(delegate.tabIndex);
         this._initStyleSheet();
         this._registerEventListeners();
         this._addDomToGameContainer();
-        View.instance.on('canvas-resize', this._resize, this);
-        screenAdapter.on('window-resize', this._resize, this);
+    }
+
+    public get useStyle(){
+        if (this._delegate) {
+            return sys.isMobile && this._delegate.useStyle;
+        }
+
+        return false;
     }
 
     public clear (): void {
@@ -137,6 +153,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         screenAdapter.off('window-resize', this._resize, this);
         this._removeEventListeners();
         this._removeDomFromGameContainer();
+        this._removeSubDomFromGameContainer();
 
         tabIndexUtil.remove(this);
 
@@ -175,8 +192,13 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (!HTML5) return;
         const elem = this._edTxt;
         if (elem) {
-            elem.style.width = `${width}px`;
-            elem.style.height = `${height}px`;
+            if (this.useStyle) {
+                elem.style.width = 'calc(100% - 14px)';
+                elem.style.height = `40px`;
+            } else {
+                elem.style.width = `${width}px`;
+                elem.style.height = `${height}px`;
+            }
         }
     }
 
@@ -185,7 +207,7 @@ export class EditBoxImpl extends EditBoxImplBase {
         if (_currentEditBoxImpl && _currentEditBoxImpl !== this) {
             _currentEditBoxImpl.setFocus(false);
         }
-
+        game.emit('exitbox_begin_edit_scroll', this._delegate);
         this._editing = true;
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         _currentEditBoxImpl = this;
@@ -211,10 +233,51 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._edTxt = ccdocument.createElement('textarea');
     }
 
+    private _createTextLabelBackgroundColor (): void {
+       this._textLabelBackgroundColor = ccdocument.createElement('div');
+       this._textLabelBackgroundColor!.id = 'TextLabelBackground';
+       this._textLabelBackgroundColor!.style.width = '100%';
+       this._textLabelBackgroundColor!.style.height = '40px';
+       this._textLabelBackgroundColor!.style.position = 'fixed';
+       this._textLabelBackgroundColor!.style.bottom = '0px';
+       this._textLabelBackgroundColor!.style.left = '0px';
+       this._textLabelBackgroundColor!.style.backgroundColor = '#262D32';
+       this._textLabelBackgroundColor!.style.display = 'none';
+       this._textLabelBackgroundColor!.style.zIndex = '1';
+       this._textLabelBackgroundColor!.style.padding = '7px';
+       this._textLabelBackgroundColor!.style.boxSizing = 'content-box';
+    }
+
+    private _createTextRightIcon (): void {
+        this._textLabelRightIcon = ccdocument.createElement('div');
+        const svg = `
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 28px; height: 28px;">
+            <circle cx="40" cy="40" r="38" fill="#007AFF"/>
+            <path d="M52.4325 36.3312L41.6179 25.5165C40.7732 24.6719 39.4041 24.6719 38.5595 25.5165L27.7448 36.3312C26.9002 37.1758 26.9002 38.545 27.7448 39.3896C28.5894 40.2342 29.9586 40.2342 30.8032 39.3896L37.9258 32.267V53.0009C37.9258 54.1959 38.8937 55.1639 40.0887 55.1639C41.2837 55.1639 42.2517 54.1959 42.2517 53.0009V32.267L49.3743 39.3896C49.796 39.8114 50.3497 40.0233 50.9035 40.0233C51.4572 40.0233 52.0109 39.8124 52.4327 39.3896C53.2773 38.545 53.2773 37.1758 52.4327 36.3312H52.4325Z" fill="white"/>
+            </svg>
+        `;
+        this._textLabelRightIcon.innerHTML = svg;
+        this._textLabelRightIcon!.id = 'TextRightIcon';
+        this._textLabelRightIcon!.style.width = '28px';
+        this._textLabelRightIcon!.style.height = '28px';
+        this._textLabelRightIcon!.style.position = 'fixed';
+        this._textLabelRightIcon!.style.bottom = '13px';
+        this._textLabelRightIcon!.style.right = '13px';
+        this._textLabelRightIcon!.style.zIndex = '3';
+        this._textLabelRightIcon!.style.display = 'none';
+        this._textLabelRightIcon!.addEventListener('touchstart', ()=>{
+            this._delegate!._editBoxEditingReturn();
+        });
+    }
+
     private _addDomToGameContainer (): void {
         if (!HTML5) return;
         if (game.container && this._edTxt) {
             game.container.appendChild(this._edTxt);
+            if (this.useStyle) {
+                game.container.appendChild(this._textLabelBackgroundColor!);
+                game.container.appendChild(this._textLabelRightIcon!);
+            }
             ccdocument.head.appendChild(this._placeholderStyleSheet!);
         }
     }
@@ -234,26 +297,65 @@ export class EditBoxImpl extends EditBoxImplBase {
         this._placeholderStyleSheet = null;
     }
 
+    private _removeSubDomFromGameContainer (): void {
+        const hasElem = contains(game.container, this._textLabelRightIcon);
+        if (hasElem && this._textLabelRightIcon) {
+            game.container!.removeChild(this._textLabelRightIcon);
+        }
+        const hasElem2 = contains(game.container, this._textLabelBackgroundColor);
+        if (hasElem2) {
+            game.container!.removeChild(this._textLabelBackgroundColor!);
+        }
+
+        this._textLabelBackgroundColor = null;
+        this._textLabelRightIcon = null;
+    }
     private _showDom (): void {
         if (!HTML5) return;
+        this._hideTimer != -1 && clearTimeout(this._hideTimer);
+        this._hideTimer = -1;
         this._updateMaxLength();
         this._updateInputType();
         this._updateStyleSheet();
         if (this._edTxt && this._delegate) {
             this._edTxt.style.display = '';
             this._delegate._hideLabels();
+            if (this.useStyle){
+                if (sys.os == OS.ANDROID || sys.os == OS.OHOS){
+                    this._edTxt.style.opacity ="0";
+                    //this._setInputBgStatus(false);
+                }else{
+                    this._setInputBgStatus(true);
+                }
+            }
         }
         if (sys.isMobile) {
             this._showDomOnMobile();
         }
     }
 
+    private _setInputBgStatus(bShow:boolean) {
+        if (!this._textLabelBackgroundColor || !this._textLabelRightIcon) return;
+        if (bShow){
+            this._textLabelBackgroundColor!.style.display = '';
+            this._textLabelRightIcon!.style.display = '';
+        }else{
+            this._textLabelBackgroundColor!.style.display = 'none';
+            this._textLabelRightIcon!.style.display = 'none';
+        }
+    }
+
     private _hideDom (): void {
         if (!HTML5) return;
+        this._showTimer != -1 && clearTimeout(this._showTimer);
+
         const elem = this._edTxt;
         if (elem && this._delegate) {
             elem.style.display = 'none';
             this._delegate._showLabels();
+            if (this.useStyle) {
+                this._setInputBgStatus(false);
+            }
         }
         if (sys.isMobile) {
             this._hideDomOnMobile();
@@ -293,18 +395,22 @@ export class EditBoxImpl extends EditBoxImplBase {
         return false;
     }
 
+    private _showTimer: number = -1;
     private _adjustWindowScroll (): void {
         if (!HTML5) return;
-        setTimeout(() => {
+        this._showTimer = setTimeout(() => {
             if (ccwindow.scrollY < SCROLLY && !this._isElementInViewport()) {
+                this._edTxt!.style.opacity ="1";
+                this._setInputBgStatus(true);
                 this._edTxt!.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'smooth' });
             }
         }, DELAY_TIME);
     }
 
+    private _hideTimer: number = -1;
     private _scrollBackWindow (): void {
         if (!HTML5) return;
-        setTimeout(() => {
+        this._hideTimer = setTimeout(() => {
             if (sys.browserType === BrowserType.WECHAT && sys.os === OS.IOS) {
                 if (ccwindow.top) {
                     ccwindow.top.scrollTo(0, 0);
@@ -376,10 +482,12 @@ export class EditBoxImpl extends EditBoxImplBase {
         const ty = _matrix_temp.m13;
 
         const matrix = `matrix(${a},${-b},${-c},${d},${tx},${-ty})`;
-        this._edTxt.style.transform = matrix;
-        this._edTxt.style['-webkit-transform'] = matrix;
-        this._edTxt.style['transform-origin'] = '0px 100% 0px';
-        this._edTxt.style['-webkit-transform-origin'] = '0px 100% 0px';
+        if (!this.useStyle) {
+            this._edTxt.style.transform = matrix;
+            this._edTxt.style['-webkit-transform'] = matrix;
+            this._edTxt.style['transform-origin'] = '0px 100% 0px';
+            this._edTxt.style['-webkit-transform-origin'] = '0px 100% 0px';
+        }
     }
 
     private _updateInputType (): void {
@@ -471,16 +579,37 @@ export class EditBoxImpl extends EditBoxImplBase {
         let elem = this._edTxt;
         elem.style.color = '#000000';
         elem.style.border = '0px';
-        elem.style.background = 'transparent';
+        if (this.useStyle) {
+            elem.style.background = '#FFFFFF';
+        } else {
+            elem.style.background = 'transparent';
+        }
         elem.style.width = '100%';
         elem.style.height = '100%';
         elem.style.outline = 'medium';
         elem.style.padding = '0';
         elem.style.textTransform = 'none';
         elem.style.display = 'none';
-        elem.style.position = 'absolute';
+        if (this.useStyle) {
+            elem.style.position = 'fixed';
+            elem.style.border = '2px solid #007AFF';
+            elem.style.boxSizing = 'border-box';
+            elem.style.borderRadius = '8px';
+            elem.style.margin = '7px';
+            elem.style.background = '#000';
+            elem.style.color = 'white';
+            elem.style.padding = '0px 36px 0 10px';
+            elem.style.zIndex = '2';
+            elem.style.boxShadow = '0px 0px 10px 0px rgba(0, 122, 255,0.8)';
+        } else {
+            elem.style.position = 'absolute';
+        }
         elem.style.bottom = '0px';
-        elem.style.left = `${LEFT_PADDING}px`;
+        if (this.useStyle) {
+            elem.style.left = `0px`;
+        } else {
+            elem.style.left = `${LEFT_PADDING}px`;
+        }
         elem.className = 'cocosEditBox';
         elem.style.fontFamily = 'Arial';
         elem.id = this._domId;
@@ -543,8 +672,13 @@ export class EditBoxImpl extends EditBoxImplBase {
         }
 
         const elem = this._edTxt;
-        elem.style.fontSize = `${fontSize}px`;
-        elem.style.color = textLabel.color.toCSS();
+        if (this.useStyle) {
+            elem.style.fontSize = `16px`;
+            elem.style.color = 'white';
+        } else {
+            elem.style.fontSize = `${fontSize}px`;
+            elem.style.color = textLabel.color.toCSS();
+        }
         elem.style.fontFamily = font;
 
         switch (textLabel.horizontalAlign) {
@@ -653,11 +787,11 @@ export class EditBoxImpl extends EditBoxImplBase {
         };
 
         cbs.onClick = (): void => {
-            if (this._editing) {
-                if (sys.isMobile) {
-                    this._adjustWindowScroll();
-                }
-            }
+            // if (this._editing) {
+            //     if (sys.isMobile) {
+            //         this._adjustWindowScroll();
+            //     }
+            // }
         };
 
         cbs.onKeydown = (e): void => {
@@ -684,7 +818,8 @@ export class EditBoxImpl extends EditBoxImplBase {
             this._editing = false;
             _currentEditBoxImpl = null;
             this._hideDom();
-            this._delegate!._editBoxEditingDidEnded();
+            game.emit('exitbox_end_edit_scroll', this._delegate);
+            this._delegate!._editBoxEditingDidEnded(elem.value);
         };
 
         elem.addEventListener('compositionstart', cbs.compositionStart as EventListenerOrEventListenerObject);

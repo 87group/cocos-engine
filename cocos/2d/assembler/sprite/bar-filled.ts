@@ -76,6 +76,9 @@ export const barFilled: IAssembler = {
 
     updateUVs (sprite: Sprite, fillStart: number, fillEnd: number) {
         const spriteFrame = sprite.spriteFrame!;
+        if (!spriteFrame) {
+            return;
+        }
         const renderData = sprite.renderData!;
         const vData = renderData.chunk.vb;
 
