@@ -394,7 +394,7 @@ export class EditBoxImpl extends EditBoxImplBase {
     private _adjustWindowScroll (): void {
         if (!HTML5) return;
         this._showTimer = setTimeout(() => {
-            if (ccwindow.scrollY < SCROLLY && !this._isElementInViewport()) {
+            if (ccwindow.scrollY < SCROLLY) {
                 this._edTxt!.style.opacity = "1";
                 this._setInputBgStatus(true);
                 this._edTxt!.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'smooth' });
