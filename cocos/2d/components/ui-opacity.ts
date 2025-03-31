@@ -123,7 +123,6 @@ export class UIOpacity extends Component {
     constructor () {
         super();
     }
-
     /**
      * @en
      * The parent node's opacity.

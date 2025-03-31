@@ -76,6 +76,9 @@ class BarFilled implements IAssembler {
 
     updateUVs (sprite: Sprite, fillStart: number, fillEnd: number): void {
         const spriteFrame = sprite.spriteFrame!;
+        if (!spriteFrame) {
+            return;
+        }
         const renderData = sprite.renderData!;
         const vData = renderData.chunk.vb;
 
